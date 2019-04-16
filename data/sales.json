@@ -1,0 +1,124 @@
+{
+    "_sales_rules": [
+        {
+            "PutRequest": {
+                "Item":
+                    {
+                        "conditions": {
+                            "L": [
+                                {
+                                    "M": {
+                                        "operation": {
+                                            "S": "eq"
+                                        },
+                                        "value": {
+                                            "S": "FORD"
+                                        },
+                                        "entity": {
+                                            "S": "customer_group"
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "rule_id": {
+                            "N": "2"
+                        },
+                        "action": {
+                            "M": {
+                                "discount": {
+                                    "N": "1"
+                                },
+                                "conditions": {
+                                    "L": [
+                                        {
+                                            "M": {
+                                                "operation": {
+                                                    "S": "eq"
+                                                },
+                                                "value": {
+                                                    "S": "classic"
+                                                },
+                                                "entity": {
+                                                    "S": "sku"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                "type": {
+                                    "S": "buy_x_get_y"
+                                },
+                                "discount_step": {
+                                    "N": "5"
+                                }
+                            }
+                        },
+                        "name": {
+                            "S": "rule_B"
+                        }
+                    }
+            }
+        },
+        {
+            "PutRequest": {
+                "Item":       
+                    {
+                        "conditions": {
+                            "L": [
+                                {
+                                    "M": {
+                                        "operation": {
+                                            "S": "eq"
+                                        },
+                                        "value": {
+                                            "S": "UNILEVER"
+                                        },
+                                        "entity": {
+                                            "S": "customer_group"
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "rule_id": {
+                            "N": "1"
+                        },
+                        "action": {
+                            "M": {
+                                "discount": {
+                                    "N": "1"
+                                },
+                                "conditions": {
+                                    "L": [
+                                        {
+                                            "M": {
+                                                "operation": {
+                                                    "S": "eq"
+                                                },
+                                                "value": {
+                                                    "S": "classic"
+                                                },
+                                                "entity": {
+                                                    "S": "sku"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                "type": {
+                                    "S": "buy_x_get_y"
+                                },
+                                "discount_step": {
+                                    "N": "3"
+                                }
+                            }
+                        },
+                        "name": {
+                            "S": "rule_A"
+                        }
+                    }
+            }
+        }
+    ]
+}

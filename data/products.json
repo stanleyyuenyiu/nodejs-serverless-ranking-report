@@ -1,0 +1,130 @@
+{
+    "_products": [
+        {
+        	"PutRequest": {
+                "Item": {
+			        
+			            "tier_price": {
+			                "L": [
+			                    {
+			                        "M": {
+			                            "price": {
+			                                "N": "389.99"
+			                            },
+			                            "qty": {
+			                                "S": "3"
+			                            },
+			                            "group": {
+			                                "S": "FORD"
+			                            }
+			                        }
+			                    },
+			                    {
+			                        "M": {
+			                            "price": {
+			                                "N": "379.99"
+			                            },
+			                            "qty": {
+			                                "S": "4"
+			                            },
+			                            "group": {
+			                                "S": "NIKE"
+			                            }
+			                        }
+			                    }
+			                ]
+			            },
+			            "price": {
+			                "N": "394.99"
+			            },
+			            "name": {
+			                "S": "Premium Ad"
+			            },
+			            "group_price": {
+			                "L": []
+			            },
+			            "product_id": {
+			                "N": "3"
+			            },
+			            "sku": {
+			                "S": "premium"
+			            }
+			        
+			    }
+			}
+		},
+		{
+			"PutRequest": {
+                "Item": {
+			        
+			            "tier_price": {
+			                "L": []
+			            },
+			            "price": {
+			                "N": "322.99"
+			            },
+			            "name": {
+			                "S": "Standout Ad"
+			            },
+			            "group_price": {
+			                "L": [
+			                    {
+			                        "M": {
+			                            "price": {
+			                                "N": "299.99"
+			                            },
+			                            "group": {
+			                                "S": "APPLE"
+			                            }
+			                        }
+			                    },
+			                    {
+			                        "M": {
+			                            "price": {
+			                                "N": "309.99"
+			                            },
+			                            "group": {
+			                                "S": "FORD"
+			                            }
+			                        }
+			                    }
+			                ]
+			            },
+			            "product_id": {
+			                "N": "2"
+			            },
+			            "sku": {
+			                "S": "standout"
+			            }
+			        
+			 	}
+			}
+		},
+		{
+			"PutRequest": {
+                "Item": {
+			        
+			            "tier_price": {
+			                "L": []
+			            },
+			            "price": {
+			                "N": "269.99"
+			            },
+			            "name": {
+			                "S": "Classic Ad"
+			            },
+			            "group_price": {
+			                "L": []
+			            },
+			            "product_id": {
+			                "N": "1"
+			            },
+			            "sku": {
+			                "S": "classic"
+			            }
+			        
+				}
+			}
+		}
+    ]
+}
