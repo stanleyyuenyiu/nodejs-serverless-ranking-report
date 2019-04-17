@@ -9,7 +9,7 @@ class Control extends Component {
         constructor(props) {
             super(props);
             this.state = {
-                startDate: new Date(),
+                startDate: new Date('1970-01-01'),
                 endDate : new Date()
             }
             this.handleStartChange = this.handleStartChange.bind(this);

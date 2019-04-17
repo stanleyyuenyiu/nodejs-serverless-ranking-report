@@ -31,28 +31,26 @@ async function callAPI2(callback){
 
 async function  callApi({endpoint, resType, method, payload})  {
   
-    let myInit = { // OPTIONAL
-        headers: {}, // OPTIONAL
+    let myInit = { 
+        headers: {}, 
         response: true
     }
     
+    spinnerService.show('mainSpinner');
 
     if(method == API_METHOD_POST)
     {
-        spinnerService.show(endpoint+'Spinner');
         myInit.body = payload;
         return await API.post(endpoint, '/'+endpoint, myInit)
             .then((response) => { 
-                spinnerService.hide(endpoint+'Spinner');
+                spinnerService.hide('mainSpinner');
                 return handleJsonRes(response)}
             )
             .catch(error => {
-                spinnerService.hide(endpoint+'Spinner');
+                spinnerService.hide('mainSpinner');
                 return Promise.reject(DEFAULT_API_ERR);
             });
     }
-
-    spinnerService.show(endpoint+'Spinner');
 
    
     let path = endpoint;
@@ -72,11 +70,11 @@ async function  callApi({endpoint, resType, method, payload})  {
     path += query;
     return await API.get("rest_api", '/'+path, myInit)
         .then((response) => { 
-            spinnerService.hide(endpoint+'Spinner');
+            spinnerService.hide('mainSpinner');
             return handleJsonRes(response)}
         )
         .catch(error => {
-            spinnerService.hide(endpoint+'Spinner');
+            spinnerService.hide('mainSpinner');
             return Promise.reject(DEFAULT_API_ERR);
         });
 
