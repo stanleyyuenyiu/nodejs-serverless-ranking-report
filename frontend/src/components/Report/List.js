@@ -10,6 +10,7 @@ class List extends Component {
       }
 
       componentWillReceiveProps(nextProps) {
+        
             if(JSON.stringify(this.props.query.reportQuery) != JSON.stringify(nextProps.query.reportQuery))
             {
                 let startDate = nextProps.query.reportQuery.startDate;
@@ -32,7 +33,7 @@ class List extends Component {
         let {data} = this.props;
 
         if(data == null || data.length == 0)
-            return null;
+            return <div>No Data, Please try again</div>;
         return (
             <div>
                 <table className="table">

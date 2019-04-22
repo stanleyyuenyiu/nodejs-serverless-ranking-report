@@ -68,6 +68,8 @@ const hasData = ({loadAction,
                     key: entityKey
                 }
             }
+
+            console.log(actionPayload)
             this.props.loadAction(actionPayload);
         }
 

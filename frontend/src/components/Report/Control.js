@@ -19,6 +19,7 @@ class Control extends Component {
 
 
         sendQuery(){
+            console.log("sendQuery")
             this.props.setDate({...this.state})
         }
 

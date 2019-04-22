@@ -61,13 +61,14 @@
 		  
 		let request = {
 			RequestItems: {
-		  		"ranking": []
 			}
 		}
+		
+		request.RequestItems[process.env.TABLE_NAME] = [];
 
 		while(requests.length > slice)
 		{
-			request.RequestItems["ranking"] = requests.slice(0, slice);
+			request.RequestItems[process.env.TABLE_NAME] = requests.slice(0, slice);
 
 			await ddb.batchWriteItem(request, function(e, d) {
 				if (e) {
@@ -79,7 +80,7 @@
 
 			if(requests.length < slice)
 			{
-				request.RequestItems["ranking"] = requests;
+				request.RequestItems[process.env.TABLE_NAME] = requests;
 				
 				await ddb.batchWriteItem(request, function(e, d) {
 					if (e) {

@@ -1,0 +1,235 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Creates the S3 bucket, SQS queue, Lambda for background job",
+	"Parameters": {
+		"S3BucketName": {
+			"MaxLength": "63",
+			"ConstraintDescription": "must be a valid S3 bucket name",
+			"Default": "scale-s3-create-retrieve-test",
+			"Description": "Required: Specify a valid, globally unique S3 bucket name.",
+			"AllowedPattern": "^[a-z0-9][a-z0-9-.]*$",
+			"MinLength": "2",
+			"Type": "String"
+		}
+	},
+	"Resources": {
+		"UploadsQueue": {
+			"Type": "AWS::SQS::Queue",
+			"Properties": {
+				"ReceiveMessageWaitTimeSeconds": 20,
+				"VisibilityTimeout": 120
+			}
+		},
+	
+		"Bucket": {
+			"Type": "AWS::S3::Bucket",
+			"Properties": {
+				"AccessControl": "Private",
+				"BucketName": {
+						"Fn::Join": [
+							"",
+							[
+								{
+									"Ref": "S3BucketName"
+								}
+							]
+						]
+				},
+				"CorsConfiguration": {
+					"CorsRules": [
+						{
+							"AllowedHeaders": [
+								"*"
+							],
+							"AllowedMethods": [
+								"GET",
+								"PUT",
+								"HEAD"
+							],
+							"AllowedOrigins": [
+								"*"
+							],
+							"ExposedHeaders": [
+								"x-amz-server-side-encryption"
+							],
+							"MaxAge": "3000"
+						}
+					]
+				},
+				"NotificationConfiguration": {
+					"QueueConfigurations": [
+						{
+							"Event": "s3:ObjectCreated:*",
+							"Queue": {"Fn::GetAtt": ["UploadsQueue", "Arn"]}
+						}
+					]
+				}
+			},
+			"DependsOn": "QueuePolicy"
+		},
+
+		"QueuePolicy": {
+			"Type": "AWS::SQS::QueuePolicy",
+			"Properties": {
+				"PolicyDocument": {
+					"Id": "PushBucketNotificationPolicy",
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Sid": "AllowBucketToPushNotificationEffect",
+							"Effect": "Allow",
+							"Principal": {
+								"AWS": "*"
+							},
+							"Action": "SQS:SendMessage",
+							"Resource": "*",
+							"Condition": {
+								"ArnLike": {
+									"aws:SourceArn": {
+										"Fn::Join": [
+											"",
+											[
+												"arn:aws:s3:*:*:",
+												{
+													"Ref": "S3BucketName"
+												}
+											]
+										]
+									}
+								}
+							}
+						}
+					]
+				},
+				"Queues": [
+					{
+						"Ref": "UploadsQueue"
+					}
+				]
+			}
+		},
+
+		"WorkerLambda": {
+	      "Type": "AWS::Lambda::Function",
+	      "Properties": {
+	        "Code": {
+	          "S3Bucket": "codeasdadsasaads",
+	          "S3Key": "SQSWorker.zip"
+	        },
+	        "Description": "SQSWorker",
+	        "Handler": "index.handler",
+	        "MemorySize": 256,
+	        "Role": {"Fn::GetAtt": ["LambdaRole", "Arn"]},
+	        "Runtime": "nodejs8.10",
+	        "Timeout": 30,
+	        "Environment": {
+	          "Variables": {
+	            "SQS": {"Ref": "UploadsQueue" },
+	            "INVOKE_FUNCTION": {"Ref": "ImportDataLambda" }
+	          }
+	        }
+	      }
+	    },
+
+		"ImportDataLambda": {
+	      "Type": "AWS::Lambda::Function",
+	      "Properties": {
+	        "Code": {
+	          "S3Bucket": "codeasdadsasaads",
+	          "S3Key": "ImportDb.zip"
+	        },
+	        "Description": "ImportDb",
+	        "Handler": "index.handler",
+	        "MemorySize": 256,
+	        "Role": {"Fn::GetAtt": ["LambdaRole", "Arn"]},
+	        "Runtime": "nodejs8.10",
+	        "Timeout": 30,
+	        "Environment": {
+	          "Variables": {
+	            "TABLE_NAME": "rankings"
+	          }
+	        }
+	      }
+	    },
+
+	  	"LambdaRole": {
+	      "Type": "AWS::IAM::Role",
+	      "Properties": {
+	        "AssumeRolePolicyDocument": {
+	          "Version": "2012-10-17",
+	          "Statement": [{
+	            "Effect": "Allow",
+	            "Principal": {
+	              "Service": "lambda.amazonaws.com"
+	            },
+	            "Action": ["sts:AssumeRole"]
+	          }]
+	        },
+	        "Path": "/",
+	        "Policies": [
+	        {
+	          "PolicyName": "logsv2",
+	          "PolicyDocument": {
+	            "Version": "2012-10-17",
+	            "Statement": [
+		            {
+		              "Effect": "Allow",
+		              "Action": [
+		                 "logs:*"
+		              ],
+		              "Resource": "arn:aws:logs:*:*:*"
+		            },
+		            {
+				      "Action": "s3:*",
+				      "Effect": "Allow",
+				      "Resource": [
+				      	{"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "S3BucketName"}]]},
+				      	{"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "S3BucketName"},"/*"]]}
+				      ]
+				    },
+				    {
+				      "Action": "dynamodb:*",
+				      "Effect": "Allow",
+				      "Resource": "arn:aws:dynamodb:*:*:*"
+				    },
+				    {
+				      "Action": "sqs:*",
+				      "Effect": "Allow",
+				      "Resource": "arn:aws:sqs:*:*:*"
+				    },
+				    {
+	                  "Effect": "Allow",
+	                  "Action": [
+	                      "lambda:InvokeFunction",
+	                      "lambda:InvokeAsync"
+	                  ],
+	                  "Resource": [
+	                      "*"
+	                  ]
+		            }
+	        	]
+	          }
+	        }
+	        ]
+	      }
+	    },
+
+	    "LambdaFunctionEventSourceMapping": {
+	      "Type": "AWS::Lambda::EventSourceMapping",
+	      "DependsOn": "UploadsQueue",
+	      "Properties": {
+	        "BatchSize": 10,
+	        "Enabled": true,
+	        "EventSourceArn": {"Fn::GetAtt": ["UploadsQueue", "Arn"]},
+	        "FunctionName": {"Fn::GetAtt": ["WorkerLambda", "Arn"]}
+	      }
+	    }
+	},
+	"Outputs": {
+		"BucketName": {
+			"Value": {
+				"Ref": "Bucket"
+			}
+		}
+	}
+}

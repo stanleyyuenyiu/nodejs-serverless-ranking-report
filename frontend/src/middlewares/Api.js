@@ -12,23 +12,6 @@ const DEFAULT_API_ERR = {
     code: "0000"
 }
 
-
-async function callAPI2(callback){
-    let apiName = window.__initialState.awsConfig.API.endpoints[0].name;
-    let path = '/'+apiName; 
-    let myInit = { // OPTIONAL
-        headers: {}, // OPTIONAL
-        response: true
-    }
-    return await API.get(apiName, path, myInit)
-        .then(callback)
-        .catch(error => {
-            console.log(error.response)
-        });
-}
-
-
-
 async function  callApi({endpoint, resType, method, payload})  {
   
     let myInit = { 
@@ -68,7 +51,9 @@ async function  callApi({endpoint, resType, method, payload})  {
     }
 
     path += query;
-    return await API.get("rest_api", '/'+path, myInit)
+
+    let apiName = window.__initialState.awsConfig.API.endpoints[0].name;
+    return await API.get(apiName, '/'+path, myInit)
         .then((response) => { 
             spinnerService.hide('mainSpinner');
             return handleJsonRes(response)}

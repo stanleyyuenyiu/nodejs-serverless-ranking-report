@@ -1,13 +1,12 @@
 import React from 'react'
-const Error = ({apiStatus, reloadData}) => (
+const Error = ({apiStatus, reloadData}) => {
+
+	return (
   <div className="error">
     <p>
-    {apiStatus.error.message
-        ? apiStatus.error.message
-        : apiStatus.error.code 
-    }
+     Something Wrong, please <a href="#" onClick={(e)=>{window.location.reload(true)}}>Reload</a>
     </p>
   </div>
-)
+)}
 
 export default Error

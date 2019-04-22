@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Lambda ,Cognito and API Gateway",
+  "Description": "Lambda and API Gateway",
   "Parameters": {
     "S3Bucket": {
       "Description": "The name of the S3 bucket that contains the source code of your Lambda function.",
@@ -8,13 +8,13 @@
     }
   },
   "Resources": {
-    "ProductsDB": {
+    "WebsitesDB": {
       "Type": "AWS::DynamoDB::Table",
       "Properties": {
         "AttributeDefinitions": [
           {
-            "AttributeName": "product_id",
-            "AttributeType": "N"
+            "AttributeName": "id",
+            "AttributeType": "S"
           }
         ],
         "ProvisionedThroughput":{
@@ -23,34 +23,11 @@
         },
         "KeySchema": [
           {
-            "AttributeName": "product_id",
+            "AttributeName": "id",
             "KeyType": "HASH"
           }
         ],
-        "TableName" : "_products"
-      }
-    },
-    
-    "SaleDB": {
-      "Type": "AWS::DynamoDB::Table",
-      "Properties": {
-        "AttributeDefinitions": [
-          {
-            "AttributeName": "rule_id",
-            "AttributeType": "N"
-          }
-        ],
-        "ProvisionedThroughput":{
-          "ReadCapacityUnits" : 5,
-          "WriteCapacityUnits" : 5
-        },
-        "KeySchema": [
-          {
-            "AttributeName": "rule_id",
-            "KeyType": "HASH"
-          }
-        ],
-        "TableName" : "_sales_rules"
+        "TableName" : "rankings"
       }
     },
    
@@ -149,7 +126,8 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                      "lambda:InvokeFunction"
+                      "lambda:InvokeFunction",
+                      "lambda:InvokeAsync"
                   ],
                   "Resource": [
                       "*"
@@ -162,92 +140,54 @@
       }
     },
     
-    "GetProductLambda": {
+    "GetDataLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
           "S3Bucket": {"Ref": "S3Bucket"},
-          "S3Key": "getProducts.zip"
+          "S3Key": "GetData.zip"
         },
-        "Description": "GetProduct",
+        "Description": "GetData",
         "Handler": "index.handler",
-        "MemorySize": 128,
+        "MemorySize": 256,
         "Role": {"Fn::GetAtt": ["LambdaRole", "Arn"]},
         "Runtime": "nodejs8.10",
-        "Timeout": 15,
+        "Timeout": 30,
         "Environment": {
           "Variables": {
-            "TABLE_NAME": { "Ref": "ProductsDB" },
-            "INVOKE_FUNCTION": {"Ref": "GetProductPriceLambda" }
+            "TABLE_NAME": { "Ref": "WebsitesDB" },
+            "INVOKE_FUNCTION": {"Ref": "FilterDataLambda" }
           }
         }
       }
     },
    
-    "GetProductPriceLambda": {
+    "FilterDataLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
           "S3Bucket": {"Ref": "S3Bucket"},
-          "S3Key": "getProductsPrice.zip"
+          "S3Key": "FilterData.zip"
         },
-        "Description": "getProductsPrice",
+        "Description": "FilterData",
         "Handler": "index.handler",
-        "MemorySize": 128,
+        "MemorySize": 256,
         "Role": {"Fn::GetAtt": ["LambdaRole", "Arn"]},
         "Runtime": "nodejs8.10",
-        "Timeout": 15
-      }
-    },
-
-    "CalTotalLambda": {
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Code": {
-          "S3Bucket": {"Ref": "S3Bucket"},
-          "S3Key": "calTotal.zip"
-        },
-        "Description": "calTotal",
-        "Handler": "index.handler",
-        "MemorySize": 128,
-        "Role": {"Fn::GetAtt": ["LambdaRole", "Arn"]},
-        "Runtime": "nodejs8.10",
-        "Timeout": 15,
+        "Timeout": 30,
         "Environment": {
-          "Variables": {
-            "TABLE_NAME_RULES": { "Ref": "SaleDB" },
-            "TABLE_NAME_PRODUCT":{ "Ref": "ProductsDB" },
-            "INVOKE_FUNCTION": {"Ref": "GetProductPriceLambda" }
-          }
+            "Variables": {
+              "URL": "http://private-1de182-mamtrialrankingadjustments4.apiary-mock.com/exclusions"
+            }
         }
       }
     },
 
-    "GetProductLambdaPermission": {
+    "GetDataLambdaPermission": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
         "Action": "lambda:invokeFunction",
-        "FunctionName": {"Fn::GetAtt": ["GetProductLambda", "Arn"]},
-        "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "RestApi"}, "/*"]]}
-      }
-    },
-
-    "GetProductPriceLambdaPermission": {
-      "Type": "AWS::Lambda::Permission",
-      "Properties": {
-        "Action": "lambda:invokeFunction",
-        "FunctionName": {"Fn::GetAtt": ["GetProductPriceLambda", "Arn"]},
-        "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "RestApi"}, "/*"]]}
-      }
-    },
-
-    "CalTotalLambdaPermission": {
-      "Type": "AWS::Lambda::Permission",
-      "Properties": {
-        "Action": "lambda:invokeFunction",
-        "FunctionName": {"Fn::GetAtt": ["CalTotalLambda", "Arn"]},
+        "FunctionName": {"Fn::GetAtt": ["GetDataLambda", "Arn"]},
         "Principal": "apigateway.amazonaws.com",
         "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "RestApi"}, "/*"]]}
       }
@@ -256,39 +196,30 @@
     "RestApi": {
       "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
-        "Name": "Rest API"
+        "Name": "RestAPI"
       }
     },
 
-    "ProductResource": {
+    "GetDataResource": {
       "Type": "AWS::ApiGateway::Resource",
       "Properties": {
         "RestApiId": {"Ref": "RestApi"},
         "ParentId": {"Fn::GetAtt": ["RestApi", "RootResourceId"]},
-        "PathPart": "products"
+        "PathPart": "data"
       }
     },  
 
-    "CartResource": {
-      "Type": "AWS::ApiGateway::Resource",
-      "Properties": {
-        "RestApiId": {"Ref": "RestApi"},
-        "ParentId": {"Fn::GetAtt": ["RestApi", "RootResourceId"]},
-        "PathPart": "cart"
-      }
-    },  
-
-    "ProductGetMethod": {
+    "DataGetMethod": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
         "RestApiId": {"Ref": "RestApi"},
-        "ResourceId": {"Ref": "ProductResource"},
+        "ResourceId": {"Ref": "GetDataResource"},
         "HttpMethod": "GET",
         "AuthorizationType": "AWS_IAM",
         "Integration": {
           "Type": "AWS_PROXY",
           "IntegrationHttpMethod": "POST",
-          "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:", {"Ref": "AWS::Region"}, ":lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["GetProductLambda", "Arn"]}, "/invocations"]]}
+          "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:", {"Ref": "AWS::Region"}, ":lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["GetDataLambda", "Arn"]}, "/invocations"]]}
         },
         "MethodResponses": [{
           "ResponseParameters": {
@@ -301,72 +232,11 @@
       }
     },
 
-    "ProductOptionMethod": {
+    "DataOptionMethod": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
         "RestApiId": {"Ref": "RestApi"},
-        "ResourceId": {"Ref": "ProductResource"},
-        "HttpMethod": "OPTIONS",
-        "AuthorizationType": "NONE",
-        "Integration": {
-          "Type": "MOCK",
-          "IntegrationHttpMethod": "POST",
-          "IntegrationResponses": [{
-            "ResponseTemplates": {
-              "application/json": ""
-            },
-            "ResponseParameters": {
-              "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-              "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
-              "method.response.header.Access-Control-Allow-Origin": "'*'"
-            },
-            "StatusCode": 200
-          }],
-          "PassthroughBehavior": "WHEN_NO_MATCH",
-          "RequestTemplates": { 
-            "application/json": "{\"statusCode\": 200}" 
-          }
-        },
-        "MethodResponses": [{
-          "ResponseModels" :{ "application/json": "Empty"},
-          "ResponseParameters": {
-            "method.response.header.Access-Control-Allow-Headers": false,
-            "method.response.header.Access-Control-Allow-Methods": false,
-            "method.response.header.Access-Control-Allow-Origin": false
-          },
-          "StatusCode": 200
-        }]
-      }
-    },
-
-    "CartPostMethod": {
-      "Type": "AWS::ApiGateway::Method",
-      "Properties": {
-        "RestApiId": {"Ref": "RestApi"},
-        "ResourceId": {"Ref": "CartResource"},
-        "HttpMethod": "POST",
-        "AuthorizationType": "AWS_IAM",
-        "Integration": {
-          "Type": "AWS_PROXY",
-          "IntegrationHttpMethod": "POST",
-          "Uri": {"Fn::Join" : ["", ["arn:aws:apigateway:", {"Ref": "AWS::Region"}, ":lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["CalTotalLambda", "Arn"]}, "/invocations"]]}
-        },
-        "MethodResponses": [{
-          "ResponseParameters": {
-            "method.response.header.Access-Control-Allow-Headers": false,
-            "method.response.header.Access-Control-Allow-Methods": false,
-            "method.response.header.Access-Control-Allow-Origin": false
-          },
-          "StatusCode": 200
-        }]
-      }
-    },
-
-    "CartOptionMethod": {
-      "Type": "AWS::ApiGateway::Method",
-      "Properties": {
-        "RestApiId": {"Ref": "RestApi"},
-        "ResourceId": {"Ref": "CartResource"},
+        "ResourceId": {"Ref": "GetDataResource"},
         "HttpMethod": "OPTIONS",
         "AuthorizationType": "NONE",
         "Integration": {
@@ -406,99 +276,9 @@
           "RestApiId": {"Ref": "RestApi"},
           "StageName": "v1"
         },
-        "DependsOn": ["ProductGetMethod","CartPostMethod"]
-    },
-
-    "CognitoIdPool": {
-      "Type" : "AWS::Cognito::IdentityPool",
-      "Properties" : {
-        "IdentityPoolName" : "RestApiIdPool",
-        "AllowUnauthenticatedIdentities" : true
-      }
-    },
-
-    "CognitoIdPoolRoleAuth": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [{
-            "Effect": "Allow",
-            "Condition": { 
-                "ForAnyValue:StringLike": {"cognito-identity.amazonaws.com:amr": "authenticated" },  
-                "StringEquals": {"cognito-identity.amazonaws.com:aud": {"Ref": "CognitoIdPool"}}
-            },
-            "Principal": {
-              "Federated": "cognito-identity.amazonaws.com"
-            },
-            "Action": ["sts:AssumeRoleWithWebIdentity"]
-          }]
-        },
-        "Path": "/",
-        "Policies": [{
-          "PolicyName": "main",
-          "PolicyDocument": {
-            "Version": "2012-10-17",
-            "Statement": [{
-              "Effect": "Allow",
-              "Action": [
-                "cognito-sync:*",
-                "cognito-identity:*"
-              ],
-              "Resource": "*"
-            }]
-          }
-        }]
-      }
-    },
-
-    "CognitoIdPoolRoleUnAuth": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [{
-            "Effect": "Allow",
-            "Condition": { 
-                "ForAnyValue:StringLike": {"cognito-identity.amazonaws.com:amr": "unauthenticated" },  
-                "StringEquals": {"cognito-identity.amazonaws.com:aud": {"Ref": "CognitoIdPool"}}
-            },
-            "Principal": {
-              "Federated": "cognito-identity.amazonaws.com"
-            },
-            "Action": ["sts:AssumeRoleWithWebIdentity"]
-          }]
-        },
-        "Path": "/",
-        "Policies": [{
-          "PolicyName": "main",
-          "PolicyDocument": {
-            "Version": "2012-10-17",
-            "Statement": [{
-              "Effect": "Allow",
-              "Action": [
-                "execute-api:Invoke"
-              ],
-              "Resource": [
-                {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", "*/*/*/*"]]}
-              ]
-            }]
-          }
-        }]
-      }
-    },
-
-    "CognitoIdPoolRoleAttachment": 
-    {
-      "Type" : "AWS::Cognito::IdentityPoolRoleAttachment",
-      "Properties" : {
-        "IdentityPoolId" : {"Ref": "CognitoIdPool"},
-        "Roles" : {
-          "authenticated": { "Fn::GetAtt": ["CognitoIdPoolRoleAuth", "Arn"]},
-          "unauthenticated": { "Fn::GetAtt": ["CognitoIdPoolRoleUnAuth", "Arn"]}
-        }
-      }
+        "DependsOn": ["DataGetMethod"]
     }
+
   },
   "Outputs": {
       "ApiId": {
@@ -506,9 +286,6 @@
       },
       "ApiBaseUrl": {
         "Value": {"Fn::Join": ["", ["https://", {"Ref": "RestApi"}, ".execute-api.", {"Ref": "AWS::Region"} , ".amazonaws.com/v1"]]}
-      },
-      "CognitoId": {
-        "Value": {"Ref": "CognitoIdPool"}
       },
       "Region": {
         "Value": {"Ref": "AWS::Region"}

@@ -1,13 +1,9 @@
 import { combineReducers } from 'redux'
 import report from './report'
-import cart from './cart'
-import customer from './customer'
-import form from './form'
 export const CLEAR = 'CLEAR';
 
 const appReducer = combineReducers({
-    report,
-    ...form
+    report
 })
 
 const rootReducer = (state = {}, action) => {
